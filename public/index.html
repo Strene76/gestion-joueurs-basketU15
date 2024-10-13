@@ -3,76 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des joueurs de basket</title>
+    <title>Covoiturage Basket U15</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 p-8">
     <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold mb-6">Gestion des joueurs de basket</h1>
+        <h1 class="text-2xl font-bold mb-6">Covoiturage Basket U15</h1>
         
-        <form id="playerForm" class="mb-8">
-            <div class="mb-4">
-                <label for="playerName" class="block mb-2">Nom du joueur:</label>
-                <input type="text" id="playerName" class="w-full p-2 border rounded" required>
+        <div class="mb-6">
+            <label for="tripDate" class="block mb-2">Choisir une date :</label>
+            <input type="date" id="tripDate" class="w-full p-2 border rounded" required>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-2">Ajouter un joueur</h2>
+            <div class="flex">
+                <input type="text" id="playerName" placeholder="Nom du joueur" class="flex-grow p-2 border rounded-l">
+                <button id="addPlayer" class="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600">+</button>
             </div>
-            <div class="mb-4">
-                <label for="carType" class="block mb-2">Type de voiture:</label>
-                <input type="text" id="carType" class="w-full p-2 border rounded" required>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-2">Ajouter un conducteur</h2>
+            <input type="text" id="driverName" placeholder="Nom du conducteur" class="w-full p-2 border rounded mb-2">
+            <input type="number" id="passengerCount" placeholder="Nombre de passagers" class="w-full p-2 border rounded mb-2" min="0">
+            <div class="flex mb-2">
+                <label class="mr-4"><input type="checkbox" id="tripTypeAller"> Aller</label>
+                <label><input type="checkbox" id="tripTypeRetour"> Retour</label>
             </div>
-            <div class="mb-4">
-                <label for="tripType" class="block mb-2">Type de trajet:</label>
-                <select id="tripType" class="w-full p-2 border rounded" required>
-                    <option value="aller">Aller</option>
-                    <option value="retour">Retour</option>
-                </select>
-            </div>
-            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Ajouter</button>
-        </form>
-        
-        <h2 class="text-xl font-semibold mb-4">Liste des joueurs et trajets</h2>
-        <ul id="playerList" class="space-y-2"></ul>
+            <button id="addDriver" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Ajouter le conducteur</button>
+        </div>
+
+        <div class="mb-6">
+            <h2 class="text-xl font-semibold mb-2">Liste des joueurs</h2>
+            <ul id="playerList" class="space-y-2"></ul>
+        </div>
+
+        <div>
+            <h2 class="text-xl font-semibold mb-2">Conducteurs et passagers</h2>
+            <ul id="driverList" class="space-y-2"></ul>
+        </div>
     </div>
 
     <script>
-        const playerForm = document.getElementById('playerForm');
+        const tripDate = document.getElementById('tripDate');
+        const playerName = document.getElementById('playerName');
+        const addPlayer = document.getElementById('addPlayer');
+        const driverName = document.getElementById('driverName');
+        const passengerCount = document.getElementById('passengerCount');
+        const tripTypeAller = document.getElementById('tripTypeAller');
+        const tripTypeRetour = document.getElementById('tripTypeRetour');
+        const addDriver = document.getElementById('addDriver');
         const playerList = document.getElementById('playerList');
+        const driverList = document.getElementById('driverList');
 
-        async function loadPlayers() {
-            const response = await fetch('/api/players');
-            const players = await response.json();
-            playerList.innerHTML = '';
-            players.forEach(player => {
-                const listItem = document.createElement('li');
-                listItem.className = 'bg-gray-200 p-3 rounded';
-                listItem.textContent = `${player.name} - ${player.car_type} - ${player.trip_type}`;
-                playerList.appendChild(listItem);
-            });
+        function addPlayerToList(player) {
+            const listItem = document.createElement('li');
+            listItem.className = 'bg-gray-200 p-3 rounded flex justify-between items-center';
+            listItem.innerHTML = `
+                <span>${player.name}</span>
+                <button class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onclick="deletePlayer(${player.id})">Supprimer</button>
+            `;
+            playerList.appendChild(listItem);
         }
 
-        loadPlayers();
+        function addDriverToList(driver) {
+            const listItem = document.createElement('li');
+            listItem.className = 'bg-gray-200 p-3 rounded flex justify-between items-center';
+            listItem.innerHTML = `
+                <span>${driver.name} - ${driver.passengerCount} passagers - ${driver.tripType}</span>
+                <button class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onclick="deleteDriver(${driver.id})">Supprimer</button>
+            `;
+            driverList.appendChild(listItem);
+        }
 
-        playerForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const playerName = document.getElementById('playerName').value;
-            const carType = document.getElementById('carType').value;
-            const tripType = document.getElementById('tripType').value;
+        async function deletePlayer(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')) {
+                const response = await fetch(`/api/players/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    document.querySelector(`#playerList li button[onclick="deletePlayer(${id})"]`).parentNode.remove();
+                } else {
+                    alert('Erreur lors de la suppression du joueur');
+                }
+            }
+        }
 
+        async function deleteDriver(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce conducteur ?')) {
+                const response = await fetch(`/api/drivers/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    document.querySelector(`#driverList li button[onclick="deleteDriver(${id})"]`).parentNode.remove();
+                } else {
+                    alert('Erreur lors de la suppression du conducteur');
+                }
+            }
+        }
+
+        addPlayer.addEventListener('click', async () => {
+            if (playerName.value.trim() === '') {
+                alert('Veuillez entrer un nom de joueur');
+                return;
+            }
             const response = await fetch('/api/players', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name: playerName, carType, tripType }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: playerName.value, date: tripDate.value }),
             });
-
             if (response.ok) {
-                loadPlayers();
-                playerForm.reset();
+                const player = await response.json();
+                addPlayerToList(player);
+                playerName.value = '';
             } else {
                 alert('Erreur lors de l'ajout du joueur');
             }
         });
+
+        addDriver.addEventListener('click', async () => {
+            if (driverName.value.trim() === '' || passengerCount.value === '') {
+                alert('Veuillez remplir tous les champs pour le conducteur');
+                return;
+            }
+            const tripType = (tripTypeAller.checked ? 'Aller' : '') + (tripTypeRetour.checked ? ' Retour' : '');
+            if (tripType === '') {
+                alert('Veuillez sélectionner au moins un type de trajet');
+                return;
+            }
+            const response = await fetch('/api/drivers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: driverName.value,
+                    passengerCount: passengerCount.value,
+                    tripType: tripType,
+                    date: tripDate.value
+                }),
+            });
+            if (response.ok) {
+                const driver = await response.json();
+                addDriverToList(driver);
+                driverName.value = '';
+                passengerCount.value = '';
+                tripTypeAller.checked = false;
+                tripTypeRetour.checked = false;
+            } else {
+                alert('Erreur lors de l'ajout du conducteur');
+            }
+        });
+
+        // Chargement initial des joueurs et conducteurs
+        fetch('/api/players').then(response => response.json()).then(players => players.forEach(addPlayerToList));
+        fetch('/api/drivers').then(response => response.json()).then(drivers => drivers.forEach(addDriverToList));
     </script>
 </body>
 </html>
