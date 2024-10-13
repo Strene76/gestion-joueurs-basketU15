@@ -3,156 +3,336 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Covoiturage Basket U15</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Gestion du Covoiturage - Saison de Basket</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1, h2, h3 {
+            color: #333;
+            text-align: center;
+        }
+        .form-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .form-section {
+            width: 48%;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input, select {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #message {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            color: #155724;
+            display: none;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        .assignment-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .assignment-section {
+            width: 48%;
+        }
+        .car-assignment {
+            background-color: white;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #dateSelector {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 p-8">
-    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
-        <h1 class="text-2xl font-bold mb-6">Covoiturage Basket U15</h1>
-        
-        <div class="mb-6">
-            <label for="tripDate" class="block mb-2">Choisir une date :</label>
-            <input type="date" id="tripDate" class="w-full p-2 border rounded" required>
+<body>
+    <h1>Gestion du Covoiturage - Saison de Basket</h1>
+    <div id="message"></div>
+    <div id="dateSelector">
+        <label for="matchDate">Date du match : </label>
+        <input type="date" id="matchDate" required>
+        <button onclick="setCurrentDate()">Sélectionner cette date</button>
+    </div>
+    <div class="form-container">
+        <div class="form-section">
+            <h2>Ajouter un joueur</h2>
+            <form id="playerForm">
+                <input type="text" id="playerName" placeholder="Nom du joueur" required>
+                <button type="submit">Ajouter Joueur</button>
+            </form>
         </div>
-
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Ajouter un joueur</h2>
-            <div class="flex">
-                <input type="text" id="playerName" placeholder="Nom du joueur" class="flex-grow p-2 border rounded-l">
-                <button id="addPlayer" class="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600">+</button>
-            </div>
-        </div>
-
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Ajouter un conducteur</h2>
-            <input type="text" id="driverName" placeholder="Nom du conducteur" class="w-full p-2 border rounded mb-2">
-            <input type="number" id="passengerCount" placeholder="Nombre de passagers" class="w-full p-2 border rounded mb-2" min="0">
-            <div class="flex mb-2">
-                <label class="mr-4"><input type="checkbox" id="tripTypeAller"> Aller</label>
-                <label><input type="checkbox" id="tripTypeRetour"> Retour</label>
-            </div>
-            <button id="addDriver" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Ajouter le conducteur</button>
-        </div>
-
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Liste des joueurs</h2>
-            <ul id="playerList" class="space-y-2"></ul>
-        </div>
-
-        <div>
-            <h2 class="text-xl font-semibold mb-2">Conducteurs et passagers</h2>
-            <ul id="driverList" class="space-y-2"></ul>
+        <div class="form-section">
+            <h2>Ajouter un conducteur</h2>
+            <form id="driverForm">
+                <input type="text" id="driverName" placeholder="Nom du conducteur" required>
+                <input type="number" id="driverSeats" placeholder="Nombre de places" min="1" required>
+                <select id="driverTrip" required>
+                    <option value="">Sélectionnez le trajet</option>
+                    <option value="aller">Aller</option>
+                    <option value="retour">Retour</option>
+                    <option value="aller-retour">Aller-retour</option>
+                </select>
+                <button type="submit">Ajouter Conducteur</button>
+            </form>
         </div>
     </div>
+    <h2>Liste des joueurs</h2>
+    <ul id="playerList"></ul>
+    <h2>Liste des conducteurs</h2>
+    <ul id="driverList"></ul>
+    <h2>Attribution des voitures</h2>
+    <div class="assignment-container">
+        <div class="assignment-section">
+            <h3>Aller</h3>
+            <div id="allerAssignment"></div>
+        </div>
+        <div class="assignment-section">
+            <h3>Retour</h3>
+            <div id="retourAssignment"></div>
+        </div>
+    </div>
+    <button id="assignButton" style="display:none;">Attribuer les voitures</button>
 
     <script>
-        const tripDate = document.getElementById('tripDate');
+        const playerForm = document.getElementById('playerForm');
         const playerName = document.getElementById('playerName');
-        const addPlayer = document.getElementById('addPlayer');
-        const driverName = document.getElementById('driverName');
-        const passengerCount = document.getElementById('passengerCount');
-        const tripTypeAller = document.getElementById('tripTypeAller');
-        const tripTypeRetour = document.getElementById('tripTypeRetour');
-        const addDriver = document.getElementById('addDriver');
         const playerList = document.getElementById('playerList');
+        const driverForm = document.getElementById('driverForm');
+        const driverName = document.getElementById('driverName');
+        const driverSeats = document.getElementById('driverSeats');
+        const driverTrip = document.getElementById('driverTrip');
         const driverList = document.getElementById('driverList');
+        const message = document.getElementById('message');
+        const assignButton = document.getElementById('assignButton');
+        const allerAssignment = document.getElementById('allerAssignment');
+        const retourAssignment = document.getElementById('retourAssignment');
+        const matchDate = document.getElementById('matchDate');
 
-        function addPlayerToList(player) {
-            const listItem = document.createElement('li');
-            listItem.className = 'bg-gray-200 p-3 rounded flex justify-between items-center';
-            listItem.innerHTML = `
-                <span>${player.name}</span>
-                <button class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onclick="deletePlayer(${player.id})">Supprimer</button>
-            `;
-            playerList.appendChild(listItem);
-        }
+        let currentDate = null;
+        let matches = {};
 
-        function addDriverToList(driver) {
-            const listItem = document.createElement('li');
-            listItem.className = 'bg-gray-200 p-3 rounded flex justify-between items-center';
-            listItem.innerHTML = `
-                <span>${driver.name} - ${driver.passengerCount} passagers - ${driver.tripType}</span>
-                <button class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600" onclick="deleteDriver(${driver.id})">Supprimer</button>
-            `;
-            driverList.appendChild(listItem);
-        }
-
-        async function deletePlayer(id) {
-            if (confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')) {
-                const response = await fetch(`/api/players/${id}`, { method: 'DELETE' });
-                if (response.ok) {
-                    document.querySelector(`#playerList li button[onclick="deletePlayer(${id})"]`).parentNode.remove();
-                } else {
-                    alert('Erreur lors de la suppression du joueur');
+        function setCurrentDate() {
+            if (matchDate.value) {
+                currentDate = matchDate.value;
+                if (!matches[currentDate]) {
+                    matches[currentDate] = { players: [], drivers: [] };
                 }
+                updateLists();
+                showMessage(`Date sélectionnée : ${currentDate}`);
+            } else {
+                showMessage("Veuillez sélectionner une date valide.");
             }
         }
 
-        async function deleteDriver(id) {
-            if (confirm('Êtes-vous sûr de vouloir supprimer ce conducteur ?')) {
-                const response = await fetch(`/api/drivers/${id}`, { method: 'DELETE' });
-                if (response.ok) {
-                    document.querySelector(`#driverList li button[onclick="deleteDriver(${id})"]`).parentNode.remove();
-                } else {
-                    alert('Erreur lors de la suppression du conducteur');
-                }
-            }
-        }
-
-        addPlayer.addEventListener('click', async () => {
-            if (playerName.value.trim() === '') {
-                alert('Veuillez entrer un nom de joueur');
-                return;
-            }
-            const response = await fetch('/api/players', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: playerName.value, date: tripDate.value }),
-            });
-            if (response.ok) {
-                const player = await response.json();
-                addPlayerToList(player);
+        playerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (currentDate && playerName.value.trim() !== '') {
+                addPlayer(playerName.value.trim());
                 playerName.value = '';
-            } else {
-                alert('Erreur lors de l'ajout du joueur');
+                showMessage('Joueur ajouté avec succès !');
+                updateAssignButton();
+            } else if (!currentDate) {
+                showMessage("Veuillez d'abord sélectionner une date.");
             }
         });
 
-        addDriver.addEventListener('click', async () => {
-            if (driverName.value.trim() === '' || passengerCount.value === '') {
-                alert('Veuillez remplir tous les champs pour le conducteur');
-                return;
-            }
-            const tripType = (tripTypeAller.checked ? 'Aller' : '') + (tripTypeRetour.checked ? ' Retour' : '');
-            if (tripType === '') {
-                alert('Veuillez sélectionner au moins un type de trajet');
-                return;
-            }
-            const response = await fetch('/api/drivers', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: driverName.value,
-                    passengerCount: passengerCount.value,
-                    tripType: tripType,
-                    date: tripDate.value
-                }),
-            });
-            if (response.ok) {
-                const driver = await response.json();
-                addDriverToList(driver);
+        driverForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (currentDate && driverName.value.trim() !== '' && driverSeats.value > 0 && driverTrip.value !== '') {
+                addDriver(driverName.value.trim(), parseInt(driverSeats.value), driverTrip.value);
                 driverName.value = '';
-                passengerCount.value = '';
-                tripTypeAller.checked = false;
-                tripTypeRetour.checked = false;
-            } else {
-                alert('Erreur lors de l'ajout du conducteur');
+                driverSeats.value = '';
+                driverTrip.value = '';
+                showMessage('Conducteur ajouté avec succès !');
+                updateAssignButton();
+            } else if (!currentDate) {
+                showMessage("Veuillez d'abord sélectionner une date.");
             }
         });
 
-        // Chargement initial des joueurs et conducteurs
-        fetch('/api/players').then(response => response.json()).then(players => players.forEach(addPlayerToList));
-        fetch('/api/drivers').then(response => response.json()).then(drivers => drivers.forEach(addDriverToList));
+        assignButton.addEventListener('click', assignCars);
+
+        function addPlayer(name) {
+            matches[currentDate].players.push(name);
+            updatePlayerList();
+        }
+
+        function addDriver(name, seats, trip) {
+            matches[currentDate].drivers.push({ name, seats, trip });
+            updateDriverList();
+        }
+
+        function updatePlayerList() {
+            playerList.innerHTML = '';
+            matches[currentDate].players.forEach((player, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    ${player}
+                    <button class="delete-btn" onclick="deletePlayer(${index})">Supprimer</button>
+                `;
+                playerList.appendChild(li);
+            });
+        }
+
+        function updateDriverList() {
+            driverList.innerHTML = '';
+            matches[currentDate].drivers.forEach((driver, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    ${driver.name} (${driver.seats} place${driver.seats > 1 ? 's' : ''}) - ${formatTrip(driver.trip)}
+                    <button class="delete-btn" onclick="deleteDriver(${index})">Supprimer</button>
+                `;
+                driverList.appendChild(li);
+            });
+        }
+
+        function deletePlayer(index) {
+            matches[currentDate].players.splice(index, 1);
+            updatePlayerList();
+            showMessage('Joueur supprimé avec succès !');
+            updateAssignButton();
+        }
+
+        function deleteDriver(index) {
+            matches[currentDate].drivers.splice(index, 1);
+            updateDriverList();
+            showMessage('Conducteur supprimé avec succès !');
+            updateAssignButton();
+        }
+
+        function formatTrip(trip) {
+            switch(trip) {
+                case 'aller': return 'Trajet aller';
+                case 'retour': return 'Trajet retour';
+                case 'aller-retour': return 'Trajet aller-retour';
+                default: return '';
+            }
+        }
+
+        function showMessage(text) {
+            message.textContent = text;
+            message.style.display = 'block';
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 3000);
+        }
+
+        function updateAssignButton() {
+            assignButton.style.display = 
+                matches[currentDate] && 
+                matches[currentDate].players.length > 0 && 
+                matches[currentDate].drivers.length > 0 ? 'block' : 'none';
+        }
+
+        function assignCars() {
+            const allerDrivers = matches[currentDate].drivers.filter(d => d.trip === 'aller' || d.trip === 'aller-retour');
+            const retourDrivers = matches[currentDate].drivers.filter(d => d.trip === 'retour' || d.trip === 'aller-retour');
+            const allerAssignments = assignPlayers(allerDrivers, [...matches[currentDate].players]);
+            const retourAssignments = assignPlayers(retourDrivers, [...matches[currentDate].players]);
+
+            displayAssignments(allerAssignments, allerAssignment);
+            displayAssignments(retourAssignments, retourAssignment);
+        }
+
+        function assignPlayers(drivers, players) {
+            const assignments = {};
+            drivers.forEach(driver => {
+                assignments[driver.name] = [];
+            });
+
+            players.forEach(player => {
+                const availableDriver = drivers.find(driver => assignments[driver.name].length < driver.seats);
+                if (availableDriver) {
+                    assignments[availableDriver.name].push(player);
+                }
+            });
+
+            return assignments;
+        }
+
+        function displayAssignments(assignments, container) {
+            container.innerHTML = '';
+            for (const [driver, passengers] of Object.entries(assignments)) {
+                const carDiv = document.createElement('div');
+                carDiv.className = 'car-assignment';
+                carDiv.innerHTML = `
+                    <h4>Voiture de ${driver}</h4>
+                    <ul>
+                        ${passengers.map(p => `<li>${p}</li>`).join('')}
+                    </ul>
+                `;
+                container.appendChild(carDiv);
+            }
+        }
+
+        function updateLists() {
+            if (currentDate && matches[currentDate]) {
+                updatePlayerList();
+                updateDriverList();
+                updateAssignButton();
+            } else {
+                playerList.innerHTML = '';
+                driverList.innerHTML = '';
+                allerAssignment.innerHTML = '';
+                retourAssignment.innerHTML = '';
+                assignButton.style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html>
