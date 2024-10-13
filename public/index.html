@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion du Covoiturage - Équipe de Basket</title>
+    <title>Gestion des Joueurs de Basket et Covoiturage</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 1000px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f0f0f0;
         }
-        h1, h2, h3 {
+        h1, h2 {
             color: #333;
             text-align: center;
         }
@@ -80,24 +80,10 @@
         .delete-btn:hover {
             background-color: #c82333;
         }
-        .assignment-container {
-            display: flex;
-            justify-content: space-between;
-        }
-        .assignment-section {
-            width: 48%;
-        }
-        .car-assignment {
-            background-color: white;
-            border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
     </style>
 </head>
 <body>
-    <h1>Gestion du Covoiturage - Équipe de Basket</h1>
+    <h1>Gestion des Joueurs de Basket et Covoiturage</h1>
     <div id="message"></div>
     <div class="form-container">
         <div class="form-section">
@@ -126,18 +112,6 @@
     <ul id="playerList"></ul>
     <h2>Liste des conducteurs</h2>
     <ul id="driverList"></ul>
-    <h2>Attribution des voitures</h2>
-    <div class="assignment-container">
-        <div class="assignment-section">
-            <h3>Aller</h3>
-            <div id="allerAssignment"></div>
-        </div>
-        <div class="assignment-section">
-            <h3>Retour</h3>
-            <div id="retourAssignment"></div>
-        </div>
-    </div>
-    <button id="assignButton" style="display:none;">Attribuer les voitures</button>
 
     <script>
         const playerForm = document.getElementById('playerForm');
@@ -149,12 +123,6 @@
         const driverTrip = document.getElementById('driverTrip');
         const driverList = document.getElementById('driverList');
         const message = document.getElementById('message');
-        const assignButton = document.getElementById('assignButton');
-        const allerAssignment = document.getElementById('allerAssignment');
-        const retourAssignment = document.getElementById('retourAssignment');
-
-        let players = [];
-        let drivers = [];
 
         playerForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -162,70 +130,36 @@
                 addPlayer(playerName.value.trim());
                 playerName.value = '';
                 showMessage('Joueur ajouté avec succès !');
-                updateAssignButton();
             }
         });
 
         driverForm.addEventListener('submit', function(e) {
             e.preventDefault();
             if (driverName.value.trim() !== '' && driverSeats.value > 0 && driverTrip.value !== '') {
-                addDriver(driverName.value.trim(), parseInt(driverSeats.value), driverTrip.value);
+                addDriver(driverName.value.trim(), driverSeats.value, driverTrip.value);
                 driverName.value = '';
                 driverSeats.value = '';
                 driverTrip.value = '';
                 showMessage('Conducteur ajouté avec succès !');
-                updateAssignButton();
             }
         });
 
-        assignButton.addEventListener('click', assignCars);
-
         function addPlayer(name) {
-            players.push(name);
-            updatePlayerList();
+            const li = document.createElement('li');
+            li.innerHTML = `
+                ${name}
+                <button class="delete-btn" onclick="deleteItem(this)">Supprimer</button>
+            `;
+            playerList.appendChild(li);
         }
 
         function addDriver(name, seats, trip) {
-            drivers.push({ name, seats, trip });
-            updateDriverList();
-        }
-
-        function updatePlayerList() {
-            playerList.innerHTML = '';
-            players.forEach((player, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    ${player}
-                    <button class="delete-btn" onclick="deletePlayer(${index})">Supprimer</button>
-                `;
-                playerList.appendChild(li);
-            });
-        }
-
-        function updateDriverList() {
-            driverList.innerHTML = '';
-            drivers.forEach((driver, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    ${driver.name} (${driver.seats} place${driver.seats > 1 ? 's' : ''}) - ${formatTrip(driver.trip)}
-                    <button class="delete-btn" onclick="deleteDriver(${index})">Supprimer</button>
-                `;
-                driverList.appendChild(li);
-            });
-        }
-
-        function deletePlayer(index) {
-            players.splice(index, 1);
-            updatePlayerList();
-            showMessage('Joueur supprimé avec succès !');
-            updateAssignButton();
-        }
-
-        function deleteDriver(index) {
-            drivers.splice(index, 1);
-            updateDriverList();
-            showMessage('Conducteur supprimé avec succès !');
-            updateAssignButton();
+            const li = document.createElement('li');
+            li.innerHTML = `
+                ${name} (${seats} place${seats > 1 ? 's' : ''}) - ${formatTrip(trip)}
+                <button class="delete-btn" onclick="deleteItem(this)">Supprimer</button>
+            `;
+            driverList.appendChild(li);
         }
 
         function formatTrip(trip) {
@@ -237,57 +171,17 @@
             }
         }
 
+        function deleteItem(btn) {
+            btn.parentElement.remove();
+            showMessage('Élément supprimé avec succès !');
+        }
+
         function showMessage(text) {
             message.textContent = text;
             message.style.display = 'block';
             setTimeout(() => {
                 message.style.display = 'none';
             }, 3000);
-        }
-
-        function updateAssignButton() {
-            assignButton.style.display = players.length > 0 && drivers.length > 0 ? 'block' : 'none';
-        }
-
-        function assignCars() {
-            const allerDrivers = drivers.filter(d => d.trip === 'aller' || d.trip === 'aller-retour');
-            const retourDrivers = drivers.filter(d => d.trip === 'retour' || d.trip === 'aller-retour');
-            const allerAssignments = assignPlayers(allerDrivers, [...players]);
-            const retourAssignments = assignPlayers(retourDrivers, [...players]);
-
-            displayAssignments(allerAssignments, allerAssignment);
-            displayAssignments(retourAssignments, retourAssignment);
-        }
-
-        function assignPlayers(drivers, players) {
-            const assignments = {};
-            drivers.forEach(driver => {
-                assignments[driver.name] = [];
-            });
-
-            players.forEach(player => {
-                const availableDriver = drivers.find(driver => assignments[driver.name].length < driver.seats);
-                if (availableDriver) {
-                    assignments[availableDriver.name].push(player);
-                }
-            });
-
-            return assignments;
-        }
-
-        function displayAssignments(assignments, container) {
-            container.innerHTML = '';
-            for (const [driver, passengers] of Object.entries(assignments)) {
-                const carDiv = document.createElement('div');
-                carDiv.className = 'car-assignment';
-                carDiv.innerHTML = `
-                    <h4>Voiture de ${driver}</h4>
-                    <ul>
-                        ${passengers.map(p => `<li>${p}</li>`).join('')}
-                    </ul>
-                `;
-                container.appendChild(carDiv);
-            }
         }
     </script>
 </body>
