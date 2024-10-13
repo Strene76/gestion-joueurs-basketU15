@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des joueurs de basket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-6">Gestion des joueurs de basket</h1>
+        
+        <form id="playerForm" class="mb-8">
+            <div class="mb-4">
+                <label for="playerName" class="block mb-2">Nom du joueur:</label>
+                <input type="text" id="playerName" class="w-full p-2 border rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="carType" class="block mb-2">Type de voiture:</label>
+                <input type="text" id="carType" class="w-full p-2 border rounded" required>
+            </div>
+            <div class="mb-4">
+                <label for="tripType" class="block mb-2">Type de trajet:</label>
+                <select id="tripType" class="w-full p-2 border rounded" required>
+                    <option value="aller">Aller</option>
+                    <option value="retour">Retour</option>
+                </select>
+            </div>
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Ajouter</button>
+        </form>
+        
+        <h2 class="text-xl font-semibold mb-4">Liste des joueurs et trajets</h2>
+        <ul id="playerList" class="space-y-2"></ul>
+    </div>
+
+    <script>
+        const playerForm = document.getElementById('playerForm');
+        const playerList = document.getElementById('playerList');
+
+        async function loadPlayers() {
+            const response = await fetch('/api/players');
+            const players = await response.json();
+            playerList.innerHTML = '';
+            players.forEach(player => {
+                const listItem = document.createElement('li');
+                listItem.className = 'bg-gray-200 p-3 rounded';
+                listItem.textContent = `${player.name} - ${player.car_type} - ${player.trip_type}`;
+                playerList.appendChild(listItem);
+            });
+        }
+
+        loadPlayers();
+
+        playerForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const playerName = document.getElementById('playerName').value;
+            const carType = document.getElementById('carType').value;
+            const tripType = document.getElementById('tripType').value;
+
+            const response = await fetch('/api/players', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: playerName, carType, tripType }),
+            });
+
+            if (response.ok) {
+                loadPlayers();
+                playerForm.reset();
+            } else {
+                alert('Erreur lors de l'ajout du joueur');
+            }
+        });
+    </script>
+</body>
+</html>
