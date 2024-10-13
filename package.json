@@ -1,0 +1,16 @@
+{
+  "name": "gestion-joueurs-basket",
+  "version": "1.0.0",
+  "description": "Application de gestion des joueurs de basket",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "sqlite3": "^5.0.2"
+  },
+  "engines": {
+    "node": "14.x"
+  }
+}
