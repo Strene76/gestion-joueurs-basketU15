@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion du Covoiturage - Saison de Basket</title>
+    <title>Gestion du Covoiturage - Équipe de Basket</title>
     <style>
-        /* Les styles restent les mêmes que dans la version précédente */
         body {
             font-family: Arial, sans-serif;
             max-width: 1000px;
@@ -95,31 +94,11 @@
             margin-bottom: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        #dateSelector {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .assignment-form {
-            background-color: white;
-            border-radius: 4px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .assignment-form select {
-            width: 100%;
-            margin-bottom: 10px;
-        }
     </style>
 </head>
 <body>
-    <h1>Gestion du Covoiturage - Saison de Basket</h1>
+    <h1>Gestion du Covoiturage - Équipe de Basket</h1>
     <div id="message"></div>
-    <div id="dateSelector">
-        <label for="matchDate">Date du match : </label>
-        <input type="date" id="matchDate" required>
-        <button onclick="setCurrentDate()">Sélectionner cette date</button>
-    </div>
     <div class="form-container">
         <div class="form-section">
             <h2>Ajouter un joueur</h2>
@@ -158,16 +137,7 @@
             <div id="retourAssignment"></div>
         </div>
     </div>
-    <div class="assignment-form">
-        <h3>Assigner un joueur à une voiture</h3>
-        <select id="playerSelect"></select>
-        <select id="driverSelect"></select>
-        <select id="tripSelect">
-            <option value="aller">Aller</option>
-            <option value="retour">Retour</option>
-        </select>
-        <button onclick="assignPlayerToCar()">Assigner</button>
-    </div>
+    <button id="assignButton" style="display:none;">Attribuer les voitures</button>
 
     <script>
         const playerForm = document.getElementById('playerForm');
@@ -179,78 +149,50 @@
         const driverTrip = document.getElementById('driverTrip');
         const driverList = document.getElementById('driverList');
         const message = document.getElementById('message');
+        const assignButton = document.getElementById('assignButton');
         const allerAssignment = document.getElementById('allerAssignment');
         const retourAssignment = document.getElementById('retourAssignment');
-        const matchDate = document.getElementById('matchDate');
-        const playerSelect = document.getElementById('playerSelect');
-        const driverSelect = document.getElementById('driverSelect');
-        const tripSelect = document.getElementById('tripSelect');
 
-        let currentDate = null;
-        let matches = {};
-
-        // Chargement des données au démarrage de l'application
-        loadData();
-
-        function setCurrentDate() {
-            if (matchDate.value) {
-                currentDate = matchDate.value;
-                if (!matches[currentDate]) {
-                    matches[currentDate] = { 
-                        players: [], 
-                        drivers: [],
-                        assignments: { aller: {}, retour: {} }
-                    };
-                }
-                updateLists();
-                showMessage(`Date sélectionnée : ${currentDate}`);
-                saveData();
-            } else {
-                showMessage("Veuillez sélectionner une date valide.");
-            }
-        }
+        let players = [];
+        let drivers = [];
 
         playerForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            if (currentDate && playerName.value.trim() !== '') {
+            if (playerName.value.trim() !== '') {
                 addPlayer(playerName.value.trim());
                 playerName.value = '';
                 showMessage('Joueur ajouté avec succès !');
-                saveData();
-            } else if (!currentDate) {
-                showMessage("Veuillez d'abord sélectionner une date.");
+                updateAssignButton();
             }
         });
 
         driverForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            if (currentDate && driverName.value.trim() !== '' && driverSeats.value > 0 && driverTrip.value !== '') {
+            if (driverName.value.trim() !== '' && driverSeats.value > 0 && driverTrip.value !== '') {
                 addDriver(driverName.value.trim(), parseInt(driverSeats.value), driverTrip.value);
                 driverName.value = '';
                 driverSeats.value = '';
                 driverTrip.value = '';
                 showMessage('Conducteur ajouté avec succès !');
-                saveData();
-            } else if (!currentDate) {
-                showMessage("Veuillez d'abord sélectionner une date.");
+                updateAssignButton();
             }
         });
 
+        assignButton.addEventListener('click', assignCars);
+
         function addPlayer(name) {
-            matches[currentDate].players.push(name);
+            players.push(name);
             updatePlayerList();
-            updatePlayerSelect();
         }
 
         function addDriver(name, seats, trip) {
-            matches[currentDate].drivers.push({ name, seats, trip });
+            drivers.push({ name, seats, trip });
             updateDriverList();
-            updateDriverSelect();
         }
 
         function updatePlayerList() {
             playerList.innerHTML = '';
-            matches[currentDate].players.forEach((player, index) => {
+            players.forEach((player, index) => {
                 const li = document.createElement('li');
                 li.innerHTML = `
                     ${player}
@@ -262,7 +204,7 @@
 
         function updateDriverList() {
             driverList.innerHTML = '';
-            matches[currentDate].drivers.forEach((driver, index) => {
+            drivers.forEach((driver, index) => {
                 const li = document.createElement('li');
                 li.innerHTML = `
                     ${driver.name} (${driver.seats} place${driver.seats > 1 ? 's' : ''}) - ${formatTrip(driver.trip)}
@@ -273,19 +215,17 @@
         }
 
         function deletePlayer(index) {
-            matches[currentDate].players.splice(index, 1);
+            players.splice(index, 1);
             updatePlayerList();
-            updatePlayerSelect();
             showMessage('Joueur supprimé avec succès !');
-            saveData();
+            updateAssignButton();
         }
 
         function deleteDriver(index) {
-            matches[currentDate].drivers.splice(index, 1);
+            drivers.splice(index, 1);
             updateDriverList();
-            updateDriverSelect();
             showMessage('Conducteur supprimé avec succès !');
-            saveData();
+            updateAssignButton();
         }
 
         function formatTrip(trip) {
@@ -305,106 +245,50 @@
             }, 3000);
         }
 
-        function updateLists() {
-            if (currentDate && matches[currentDate]) {
-                updatePlayerList();
-                updateDriverList();
-                updatePlayerSelect();
-                updateDriverSelect();
-                updateAssignments();
-            } else {
-                playerList.innerHTML = '';
-                driverList.innerHTML = '';
-                allerAssignment.innerHTML = '';
-                retourAssignment.innerHTML = '';
-            }
+        function updateAssignButton() {
+            assignButton.style.display = players.length > 0 && drivers.length > 0 ? 'block' : 'none';
         }
 
-        function updatePlayerSelect() {
-            playerSelect.innerHTML = '<option value="">Sélectionnez un joueur</option>';
-            matches[currentDate].players.forEach(player => {
-                const option = document.createElement('option');
-                option.value = player;
-                option.textContent = player;
-                playerSelect.appendChild(option);
+        function assignCars() {
+            const allerDrivers = drivers.filter(d => d.trip === 'aller' || d.trip === 'aller-retour');
+            const retourDrivers = drivers.filter(d => d.trip === 'retour' || d.trip === 'aller-retour');
+            const allerAssignments = assignPlayers(allerDrivers, [...players]);
+            const retourAssignments = assignPlayers(retourDrivers, [...players]);
+
+            displayAssignments(allerAssignments, allerAssignment);
+            displayAssignments(retourAssignments, retourAssignment);
+        }
+
+        function assignPlayers(drivers, players) {
+            const assignments = {};
+            drivers.forEach(driver => {
+                assignments[driver.name] = [];
             });
-        }
 
-        function updateDriverSelect() {
-            driverSelect.innerHTML = '<option value="">Sélectionnez un conducteur</option>';
-            matches[currentDate].drivers.forEach(driver => {
-                const option = document.createElement('option');
-                option.value = driver.name;
-                option.textContent = `${driver.name} (${driver.seats} place${driver.seats > 1 ? 's' : ''})`;
-                driverSelect.appendChild(option);
-            });
-        }
-
-        function assignPlayerToCar() {
-            const player = playerSelect.value;
-            const driver = driverSelect.value;
-            const trip = tripSelect.value;
-
-            if (!player || !driver) {
-                showMessage("Veuillez sélectionner un joueur et un conducteur.");
-                return;
-            }
-
-            const driverObj = matches[currentDate].drivers.find(d => d.name === driver);
-            if (!driverObj) {
-                showMessage("Conducteur non trouvé.");
-                return;
-            }
-
-            if (driverObj.trip !== trip && driverObj.trip !== 'aller-retour') {
-                showMessage(`Ce conducteur n'est pas disponible pour le trajet ${trip}.`);
-                return;
-            }
-
-            if (!matches[currentDate].assignments[trip][driver]) {
-                matches[currentDate].assignments[trip][driver] = [];
-            }
-
-            if (matches[currentDate].assignments[trip][driver].length >= driverObj.seats) {
-                showMessage("Cette voiture est pleine.");
-                return;
-            }
-
-            matches[currentDate].assignments[trip][driver].push(player);
-            showMessage(`${player} assigné à la voiture de ${driver} pour le trajet ${trip}.`);
-            updateAssignments();
-            saveData();
-        }
-
-        function updateAssignments() {
-            allerAssignment.innerHTML = '';
-            retourAssignment.innerHTML = '';
-
-            for (const trip of ['aller', 'retour']) {
-                const container = trip === 'aller' ? allerAssignment : retourAssignment;
-                for (const [driver, passengers] of Object.entries(matches[currentDate].assignments[trip])) {
-                    const carDiv = document.createElement('div');
-                    carDiv.className = 'car-assignment';
-                    carDiv.innerHTML = `
-                        <h4>Voiture de ${driver}</h4>
-                        <ul>
-                            ${passengers.map(p => `<li>${p}</li>`).join('')}
-                        </ul>
-                    `;
-                    container.appendChild(carDiv);
+            players.forEach(player => {
+                const availableDriver = drivers.find(driver => assignments[driver.name].length < driver.seats);
+                if (availableDriver) {
+                    assignments[availableDriver.name].push(player);
                 }
-            }
+            });
+
+            return assignments;
         }
 
-        function saveData() {
-            localStorage.setItem('basketCovoiturage', JSON.stringify(matches));
-        }
-
-        function loadData() {
-            const savedData = localStorage.getItem('basketCovoiturage');
-            if (savedData) {
-                matches = JSON.parse(savedData);
-                showMessage("Données chargées avec succès.");
+        function displayAssignments(assignments, container) {
+            container.innerHTML = '';
+            for (const [driver, passengers] of Object.entries(assignments)) {
+                const carDiv = document.createElement('div');
+                carDiv.className = 'car-assignment';
+                carDiv.innerHTML = `
+                    <h4>Voiture de ${driver}</h4>
+                    <ul>
+                        ${passengers.map(p => `<li>${p}</li>`).join('')}
+                    </ul>
+                `;
+                container.appendChild(carDiv);
             }
         }
-    </script
+    </script>
+</body>
+</html>
