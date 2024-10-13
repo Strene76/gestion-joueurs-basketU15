@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des Joueurs de Basket et Covoiturage</title>
+    <title>Gestion du Covoiturage - Saison de Basket</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
             background-color: #f0f0f0;
         }
-        h1, h2 {
+        h1, h2, h3 {
             color: #333;
             text-align: center;
         }
@@ -80,11 +80,34 @@
         .delete-btn:hover {
             background-color: #c82333;
         }
+        .assignment-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .assignment-section {
+            width: 48%;
+        }
+        .car-assignment {
+            background-color: white;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #dateSelector {
+            margin-bottom: 20px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <h1>Gestion des Joueurs de Basket et Covoiturage</h1>
+    <h1>Gestion du Covoiturage - Saison de Basket</h1>
     <div id="message"></div>
+    <div id="dateSelector">
+        <label for="matchDate">Date du match : </label>
+        <input type="date" id="matchDate" required>
+        <button onclick="setCurrentDate()">Sélectionner cette date</button>
+    </div>
     <div class="form-container">
         <div class="form-section">
             <h2>Ajouter un joueur</h2>
@@ -112,6 +135,18 @@
     <ul id="playerList"></ul>
     <h2>Liste des conducteurs</h2>
     <ul id="driverList"></ul>
+    <h2>Attribution des voitures</h2>
+    <div class="assignment-container">
+        <div class="assignment-section">
+            <h3>Aller</h3>
+            <div id="allerAssignment"></div>
+        </div>
+        <div class="assignment-section">
+            <h3>Retour</h3>
+            <div id="retourAssignment"></div>
+        </div>
+    </div>
+    <button id="assignButton" style="display:none;">Attribuer les voitures</button>
 
     <script>
         const playerForm = document.getElementById('playerForm');
@@ -123,43 +158,101 @@
         const driverTrip = document.getElementById('driverTrip');
         const driverList = document.getElementById('driverList');
         const message = document.getElementById('message');
+        const assignButton = document.getElementById('assignButton');
+        const allerAssignment = document.getElementById('allerAssignment');
+        const retourAssignment = document.getElementById('retourAssignment');
+        const matchDate = document.getElementById('matchDate');
+
+        let currentDate = null;
+        let matches = {};
+
+        function setCurrentDate() {
+            if (matchDate.value) {
+                currentDate = matchDate.value;
+                if (!matches[currentDate]) {
+                    matches[currentDate] = { players: [], drivers: [] };
+                }
+                updateLists();
+                showMessage(`Date sélectionnée : ${currentDate}`);
+            } else {
+                showMessage("Veuillez sélectionner une date valide.");
+            }
+        }
 
         playerForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            if (playerName.value.trim() !== '') {
+            if (currentDate && playerName.value.trim() !== '') {
                 addPlayer(playerName.value.trim());
                 playerName.value = '';
                 showMessage('Joueur ajouté avec succès !');
+                updateAssignButton();
+            } else if (!currentDate) {
+                showMessage("Veuillez d'abord sélectionner une date.");
             }
         });
 
         driverForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            if (driverName.value.trim() !== '' && driverSeats.value > 0 && driverTrip.value !== '') {
-                addDriver(driverName.value.trim(), driverSeats.value, driverTrip.value);
+            if (currentDate && driverName.value.trim() !== '' && driverSeats.value > 0 && driverTrip.value !== '') {
+                addDriver(driverName.value.trim(), parseInt(driverSeats.value), driverTrip.value);
                 driverName.value = '';
                 driverSeats.value = '';
                 driverTrip.value = '';
                 showMessage('Conducteur ajouté avec succès !');
+                updateAssignButton();
+            } else if (!currentDate) {
+                showMessage("Veuillez d'abord sélectionner une date.");
             }
         });
 
+        assignButton.addEventListener('click', assignCars);
+
         function addPlayer(name) {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                ${name}
-                <button class="delete-btn" onclick="deleteItem(this)">Supprimer</button>
-            `;
-            playerList.appendChild(li);
+            matches[currentDate].players.push(name);
+            updatePlayerList();
         }
 
         function addDriver(name, seats, trip) {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                ${name} (${seats} place${seats > 1 ? 's' : ''}) - ${formatTrip(trip)}
-                <button class="delete-btn" onclick="deleteItem(this)">Supprimer</button>
-            `;
-            driverList.appendChild(li);
+            matches[currentDate].drivers.push({ name, seats, trip });
+            updateDriverList();
+        }
+
+        function updatePlayerList() {
+            playerList.innerHTML = '';
+            matches[currentDate].players.forEach((player, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    ${player}
+                    <button class="delete-btn" onclick="deletePlayer(${index})">Supprimer</button>
+                `;
+                playerList.appendChild(li);
+            });
+        }
+
+        function updateDriverList() {
+            driverList.innerHTML = '';
+            matches[currentDate].drivers.forEach((driver, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    ${driver.name} (${driver.seats} place${driver.seats > 1 ? 's' : ''}) - ${formatTrip(driver.trip)}
+                    <button class="delete-btn" onclick="deleteDriver(${index})">Supprimer</button>
+                `;
+                driverList.appendChild(li);
+            });
+        }
+
+        function deletePlayer(index) {
+            matches[currentDate].players.splice(index, 1);
+            updatePlayerList();
+            showMessage('Joueur supprimé avec succès !');
+            updateAssignButton();
+        }
+
+        function deleteDriver(index) {
+            matches[currentDate].drivers.splice(index, 1);
+            updateDriverList();
+            showMessage('Conducteur supprimé avec succès !');
+            updateAssignButton();
         }
 
         function formatTrip(trip) {
@@ -171,17 +264,74 @@
             }
         }
 
-        function deleteItem(btn) {
-            btn.parentElement.remove();
-            showMessage('Élément supprimé avec succès !');
-        }
-
         function showMessage(text) {
             message.textContent = text;
             message.style.display = 'block';
             setTimeout(() => {
                 message.style.display = 'none';
             }, 3000);
+        }
+
+        function updateAssignButton() {
+            assignButton.style.display = 
+                matches[currentDate] && 
+                matches[currentDate].players.length > 0 && 
+                matches[currentDate].drivers.length > 0 ? 'block' : 'none';
+        }
+
+        function assignCars() {
+            const allerDrivers = matches[currentDate].drivers.filter(d => d.trip === 'aller' || d.trip === 'aller-retour');
+            const retourDrivers = matches[currentDate].drivers.filter(d => d.trip === 'retour' || d.trip === 'aller-retour');
+            const allerAssignments = assignPlayers(allerDrivers, [...matches[currentDate].players]);
+            const retourAssignments = assignPlayers(retourDrivers, [...matches[currentDate].players]);
+
+            displayAssignments(allerAssignments, allerAssignment);
+            displayAssignments(retourAssignments, retourAssignment);
+        }
+
+        function assignPlayers(drivers, players) {
+            const assignments = {};
+            drivers.forEach(driver => {
+                assignments[driver.name] = [];
+            });
+
+            players.forEach(player => {
+                const availableDriver = drivers.find(driver => assignments[driver.name].length < driver.seats);
+                if (availableDriver) {
+                    assignments[availableDriver.name].push(player);
+                }
+            });
+
+            return assignments;
+        }
+
+        function displayAssignments(assignments, container) {
+            container.innerHTML = '';
+            for (const [driver, passengers] of Object.entries(assignments)) {
+                const carDiv = document.createElement('div');
+                carDiv.className = 'car-assignment';
+                carDiv.innerHTML = `
+                    <h4>Voiture de ${driver}</h4>
+                    <ul>
+                        ${passengers.map(p => `<li>${p}</li>`).join('')}
+                    </ul>
+                `;
+                container.appendChild(carDiv);
+            }
+        }
+
+        function updateLists() {
+            if (currentDate && matches[currentDate]) {
+                updatePlayerList();
+                updateDriverList();
+                updateAssignButton();
+            } else {
+                playerList.innerHTML = '';
+                driverList.innerHTML = '';
+                allerAssignment.innerHTML = '';
+                retourAssignment.innerHTML = '';
+                assignButton.style.display = 'none';
+            }
         }
     </script>
 </body>
