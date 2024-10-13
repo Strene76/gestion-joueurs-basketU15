@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion du Covoiturage - Saison de Basket</title>
     <style>
+        /* Les styles restent les mêmes que dans la version précédente */
         body {
             font-family: Arial, sans-serif;
             max-width: 1000px;
@@ -188,6 +189,9 @@
         let currentDate = null;
         let matches = {};
 
+        // Chargement des données au démarrage de l'application
+        loadData();
+
         function setCurrentDate() {
             if (matchDate.value) {
                 currentDate = matchDate.value;
@@ -200,6 +204,7 @@
                 }
                 updateLists();
                 showMessage(`Date sélectionnée : ${currentDate}`);
+                saveData();
             } else {
                 showMessage("Veuillez sélectionner une date valide.");
             }
@@ -211,6 +216,7 @@
                 addPlayer(playerName.value.trim());
                 playerName.value = '';
                 showMessage('Joueur ajouté avec succès !');
+                saveData();
             } else if (!currentDate) {
                 showMessage("Veuillez d'abord sélectionner une date.");
             }
@@ -224,6 +230,7 @@
                 driverSeats.value = '';
                 driverTrip.value = '';
                 showMessage('Conducteur ajouté avec succès !');
+                saveData();
             } else if (!currentDate) {
                 showMessage("Veuillez d'abord sélectionner une date.");
             }
@@ -270,6 +277,7 @@
             updatePlayerList();
             updatePlayerSelect();
             showMessage('Joueur supprimé avec succès !');
+            saveData();
         }
 
         function deleteDriver(index) {
@@ -277,6 +285,7 @@
             updateDriverList();
             updateDriverSelect();
             showMessage('Conducteur supprimé avec succès !');
+            saveData();
         }
 
         function formatTrip(trip) {
@@ -364,6 +373,7 @@
             matches[currentDate].assignments[trip][driver].push(player);
             showMessage(`${player} assigné à la voiture de ${driver} pour le trajet ${trip}.`);
             updateAssignments();
+            saveData();
         }
 
         function updateAssignments() {
@@ -385,6 +395,16 @@
                 }
             }
         }
-    </script>
-</body>
-</html>
+
+        function saveData() {
+            localStorage.setItem('basketCovoiturage', JSON.stringify(matches));
+        }
+
+        function loadData() {
+            const savedData = localStorage.getItem('basketCovoiturage');
+            if (savedData) {
+                matches = JSON.parse(savedData);
+                showMessage("Données chargées avec succès.");
+            }
+        }
+    </script
